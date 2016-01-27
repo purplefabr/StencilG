@@ -26,7 +26,6 @@ namespace StencilG
         public double MoveSpeed { get; set; }       // Speed (mm/min) to do moves at
         public double CutSpeed { get; set; }        // Speed (mm/min) to do cuts at
         public double ToolZSpeed { get; set; }      // Speed (mm/min) to plunge and retract tool at
-        public double RotateSpeed { get; set; }
         public bool EnableGCodeComments { get; set; }
 
         public Cutter(StreamWriter streamWriter)
@@ -35,31 +34,38 @@ namespace StencilG
             this.headingKnown = false;
             this.heading = 0;
             this.zHeight = double.PositiveInfinity;
-            this.commentColumn = "50";
-            this.xWorkOrigin = 0;
-            this.yWorkOrigin = 0;
+            this.commentColumn = "40";
+            this.xWorkOrigin = -30;
+            this.yWorkOrigin = -30;
+            this.cutterX = double.NaN;
+            this.cutterY = double.NaN;
+            this.toolX = double.NaN;
+            this.toolY = double.NaN;
 
             CutterDiameter = 0.9;
             CutterAngle = 45;
-            MoveHeight = 10;
+            MoveHeight = 5;
             CutHeight = 0;
-            MoveSpeed = 200;
-            CutSpeed = 20;
-            ToolZSpeed = 20;
-            RotateSpeed = 5;
+            MoveSpeed = 600;
+            CutSpeed = 60;
+            ToolZSpeed = 50;
             EnableGCodeComments = true;
 
             Home();
             Start();
-            OrientCutter(0);
         }
 
         public void Render(LineSegment segment)
         {
-            if (!this.headingKnown)
+            if (!this.headingKnown || (this.heading != segment.Heading))
             {
-                OrientCutter(0);
+                OrientCutter(segment);
             }
+
+            Move(segment, "Move");
+            Plunge();
+            Cut(segment, "Cut");
+            Retract();
         }
 
         #region GCode Helpers
@@ -70,65 +76,71 @@ namespace StencilG
             this.zHeight = double.PositiveInfinity;  //At max Z due to G28 home
             this.toolX = 0;
             this.toolY = 0;
+            if (!headingKnown)
+            {
+                this.cutterX = double.NaN;
+                this.cutterY = double.NaN;
+            }
         }
 
         private void Start()
         {
-            Write("G1 X" + GCodeDouble(0) + " Y" + GCodeDouble(0) + " Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(MoveSpeed), "Move to start position");
+            Write("G1 X" + GCodeDouble(0) + " Y" + GCodeDouble(0) + " Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(MoveSpeed * 2), "Move to start position");
             this.zHeight = MoveHeight;
             this.toolX = 0;
             this.toolY = 0;
+            if (!headingKnown)
+            {
+                this.cutterX = double.NaN;
+                this.cutterY = double.NaN;
+            }
         }
 
-        private void Move(double cutterX, double cutterY, string comment)
+        private void Move(LineSegment segment, string comment, bool ignoreCutterDiameter = false)
         {
-            if (this.zHeight == MoveHeight)
-            {
-                Write("G1 X" + GCodeDouble(cutterX) + " Y" + GCodeDouble(cutterY) + " F" + GCodeDouble(MoveSpeed), comment);
-                //this.toolX = x;
-                //this.toolY = y;
-            }
+            if (this.zHeight != MoveHeight)
+                throw new CutterException("Lockout on Move due to incorrect Z Height");
+
+            double distance;
+            if (ignoreCutterDiameter)
+                distance = 0;
             else
-                throw new CutterException("Lockout on Move due to incorrect Z Height");           
+                distance = CutterDiameter / 2;
+
+            var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, distance);
+
+            Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(MoveSpeed), comment);
+            this.toolX = toolEndPoint.X;
+            this.toolY = toolEndPoint.Y;
+            this.cutterX = segment.Start.X;
+            this.cutterY = segment.Start.Y;
+
         }
 
-        private void Cut(double cutterX, double cutterY, string comment){
-            if (this.zHeight == CutHeight)
-            {
-                double xDifference = cutterX - this.cutterX;
-                double yDifference = cutterY - this.cutterY;
-
-                //Calculate heading
-                double headingRad = Math.Atan2(xDifference, yDifference);
-                if (headingRad < 0)
-                    headingRad += 2 * Math.PI;
-                double headingDeg = headingRad * (180 / Math.PI);
-
-                if (headingDeg != this.heading)
-                {
-                    //Rotate cutter
-                    //Arc()
-                    //this.heading = headingDeg;
-                }
-
-                //Calculate length of hypotenuse
-                double h = Math.Sqrt(Math.Pow(Math.Abs(xDifference), 2) + Math.Pow(Math.Abs(yDifference), 2));
-                double h2 = h + CutterDiameter / 2;
-
-                //double toolX = Math.Sin(headingRad)
-
-                double toolX = cutterX;
-                double toolY = cutterY;
-
-                Write("G1 X" + GCodeDouble(toolX) + " Y" + GCodeDouble(toolY) + " F" + GCodeDouble(CutSpeed), comment);
-                this.toolX = x;
-                this.toolY = y;
-            }
-            else
+        private void Cut(LineSegment segment, string comment, bool ignoreCutterDiameter = false)
+        {
+            if ((segment.Start.X != this.cutterX) || (segment.Start.Y != this.cutterY))
+                throw new CutterException("Lockout on Cut due to incorrect cutter position");
+            if (this.zHeight != CutHeight)
                 throw new CutterException("Lockout on Cut due to incorrect Z Height");
+
+            double h2;
+            if (ignoreCutterDiameter)
+                h2 = segment.Length;
+            else
+                h2 = segment.Length + CutterDiameter / 2;
+
+            var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, h2);
+
+            Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(CutSpeed), comment);
+            this.toolX = toolEndPoint.X;
+            this.toolY = toolEndPoint.Y;
+            this.cutterX = segment.End.X;
+            this.cutterY = segment.End.Y;
         }
 
-        private void Plunge(){
+        private void Plunge()
+        {
             Write("G1 Z" + GCodeDouble(CutHeight) + " F" + GCodeDouble(ToolZSpeed), "Plunge blade");
             this.zHeight = CutHeight;
         }
@@ -139,28 +151,15 @@ namespace StencilG
             this.zHeight = MoveHeight;
         }
 
-        private void Arc(double newHeading)
+        private void OrientCutter(LineSegment segment)
         {
-            if (CW)
-                Write("G2 X" + GCodeDouble(finishX) + " Y" + GCodeDouble(finishY) + " I" + GCodeDouble(cutterX) + " J" + GCodeDouble(cutterY) + " F" + GCodeDouble(RotateSpeed), "Rotating blade");
-            else
-                Write("G3 X" + GCodeDouble(finishX) + " Y" + GCodeDouble(finishY) + " I" + GCodeDouble(cutterX) + " J" + GCodeDouble(cutterY) + " F" + GCodeDouble(RotateSpeed), "Rotating blade");
-            this.toolX = finishX;
-            this.toolY = finishY;
-        }
+            LineSegment orientSegment = new LineSegment(new Point(xWorkOrigin, yWorkOrigin), segment.Heading, 5);
 
-        private void OrientCutter(double heading)
-        {
-            if (this.headingKnown)
-                throw new CutterException("Heading is known");
-            if (heading != 0)
-                throw new NotImplementedException();
-            Move(xWorkOrigin, yWorkOrigin, "Move to cutter orientation area");
-            //Plunge();
-            //Cut(xWorkOrigin, yWorkOrigin + 10, "Orient cutter to heading of " + GCodeDouble(heading));
-            Move(xWorkOrigin -10, yWorkOrigin + 10, "Test");
+            Move(orientSegment, "Move to cutter orientation area", true);
+            Plunge();
+            Cut(orientSegment, "Orient cutter to heading of " + GCodeDouble(segment.Heading), true);
             Retract();
-            this.heading = heading;
+            this.heading = orientSegment.Heading;
             this.headingKnown = true;
         }
 
@@ -177,26 +176,6 @@ namespace StencilG
                 streamWriter.WriteLine(String.Format("{0,-" + commentColumn + "}; {1}", command, comment));
             else
                 streamWriter.WriteLine(command);
-        }      
-
-        private void ChangeHeading(double newHeading)
-        {
-            if (!headingKnown)
-                throw new CutterException("Current heading is unknown");
-
-            int difference = (int)(newHeading - this.heading);
-
-            //switch(difference)
-            //{
-            //    case 0:
-            //        break;
-            //    case -90:       //CCW --> to ^
-            //        Arc()
-
-            //}
-
-            //Generate G2/G3 move to orient blade
-
         }
     }
 }
