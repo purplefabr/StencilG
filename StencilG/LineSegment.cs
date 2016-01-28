@@ -8,14 +8,13 @@ namespace StencilG
 {
     public class LineSegment
     {
-        public Point Start { get; set; }
-        public Point End { get; set; }
-        public double dX { get; set; }
-        public double dY { get; set; }
-        public double Length { get; set; }
-        public double Heading { get; set; }
-        public double HeadingRad { get; set; }
-        public LineSegmentType Type { get; set; }
+        public Point Start { get; internal set; }
+        public Point End { get; internal set; }
+        public double dX { get; internal set; }
+        public double dY { get; internal set; }
+        public double Length { get; internal set; }
+        public double Heading { get; internal set; }
+        public double HeadingRad { get; internal set; }
 
         public LineSegment(Point start, Point end)
         {
@@ -43,12 +42,5 @@ namespace StencilG
             Heading = heading;
             Length = length;
         }
-    }
-
-    public enum LineSegmentType
-    {
-        Move,
-        Score,
-        Cut
     }
 }

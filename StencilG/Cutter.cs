@@ -9,24 +9,24 @@ namespace StencilG
 {
     public class Cutter
     {
-        private StreamWriter streamWriter;          // Streamwriter for output stream
-        private bool headingKnown;                  // False when blade direction hasn't been initialised
-        private double heading;                     // Blade direction in degrees
-        private double zHeight;                     // if zHeight = 0 then cutter is cutting, so no plunge required
-        private string commentColumn;               // Position of all gcode comments, make this larger than longest gcode length
-        private double xWorkOrigin;                 // Position of 0,y (delta printers have machine origin in the middle so set to negative value)
-        private double yWorkOrigin;                 // Position of x,0 (delta printers have machine origin in the middle so set to negative value)       
-        private double cutterX, cutterY;            // XY position of the cutting point
-        private double toolX, toolY;                // XY position of the tool centre
+        private StreamWriter streamWriter;              // Streamwriter for output stream
+        private bool headingKnown;                      // False when blade direction hasn't been initialised
+        private double heading;                         // Blade direction in degrees
+        private double zHeight;                         // if zHeight = 0 then cutter is cutting, so no plunge required
+        private string commentColumn;                   // Position of all gcode comments, make this larger than longest gcode length
+        private double xScratchOrigin;                  // Position of scratch area 0,y (delta printers have machine origin in the middle so set to negative value)
+        private double yScratchOrigin;                  // Position of scratch area x,0 (delta printers have machine origin in the middle so set to negative value)       
+        private double cutterX, cutterY;                // XY position of the cutting point
+        private double toolX, toolY;                    // XY position of the tool centre
 
-        public double CutterDiameter { get; set; }  // Blade body diameter in mm
-        public double CutterAngle { get; set; }     // Blade cutting angle in degrees
-        public double MoveHeight { get; set; }      // Z height to do moves at (where tool is clear of work area)
-        public double CutHeight { get; set; }       // Z height to cut at (where tool is engaged with material)
-        public double MoveSpeed { get; set; }       // Speed (mm/min) to do moves at
-        public double CutSpeed { get; set; }        // Speed (mm/min) to do cuts at
-        public double ToolZSpeed { get; set; }      // Speed (mm/min) to plunge and retract tool at
-        public bool EnableGCodeComments { get; set; }
+        public double CutterDiameter { get; set; }      // Blade body diameter in mm
+        public double CutterAngle { get; set; }         // Blade cutting angle in degrees
+        public double MoveHeight { get; set; }          // Z height to do moves at (where tool is clear of work area)
+        public double CutHeight { get; set; }           // Z height to cut at (where tool is engaged with material)
+        public double MoveSpeed { get; set; }           // Speed (mm/min) to do moves at
+        public double CutSpeed { get; set; }            // Speed (mm/min) to do cuts at
+        public double ToolZSpeed { get; set; }          // Speed (mm/min) to plunge and retract tool at
+        public bool EnableGCodeComments { get; set; }   // Output comments to gcode file
 
         public Cutter(StreamWriter streamWriter)
         {
@@ -35,8 +35,8 @@ namespace StencilG
             this.heading = 0;
             this.zHeight = double.PositiveInfinity;
             this.commentColumn = "40";
-            this.xWorkOrigin = -30;
-            this.yWorkOrigin = -30;
+            this.xScratchOrigin = -30;
+            this.yScratchOrigin = -30;
             this.cutterX = double.NaN;
             this.cutterY = double.NaN;
             this.toolX = double.NaN;
@@ -168,7 +168,7 @@ namespace StencilG
 
         private void OrientCutter(LineSegment segment)
         {
-            LineSegment orientSegment = new LineSegment(new Point(xWorkOrigin, yWorkOrigin), segment.Heading, 5);
+            LineSegment orientSegment = new LineSegment(new Point(xScratchOrigin, yScratchOrigin), segment.Heading, 5);
 
             Move(orientSegment, "Move to cutter orientation area", true);
             Plunge();
