@@ -43,6 +43,7 @@ namespace StencilG
                     preStartDistance = value;
             }
         }
+        public double PostEndDistance { get; set; }
 
         public Cutter(StreamWriter streamWriter)
         {
@@ -124,16 +125,20 @@ namespace StencilG
             if (this.zHeight != MoveHeight)
                 throw new CutterException("Lockout on Move due to incorrect Z Height");
 
+            var preMovePoint = MathHelper.CalcEndPoint(segment.Start, (segment.Heading + 180) % 360, 10);
+            Write("G1 X" + GCodeDouble(preMovePoint.X) + " Y" + GCodeDouble(preMovePoint.Y) + " F" + GCodeDouble(MoveSpeed), "PreMove point");
+
             double distance;
             if (ignoreCutterDiameter)
                 distance = 0;
             else
                 distance = (CutterDiameter / 2) - preStartDistance;
 
-            var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, distance);
+            var toolPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, distance);
+            
 
-            Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(MoveSpeed), comment);
-            this.toolPoint.Update(toolEndPoint);
+            Write("G1 X" + GCodeDouble(toolPoint.X) + " Y" + GCodeDouble(toolPoint.Y) + " F" + GCodeDouble(MoveSpeed), comment);
+            this.toolPoint.Update(toolPoint);
             this.cutterPoint.Update(segment.Start);
         }
 
@@ -148,7 +153,7 @@ namespace StencilG
             if (ignoreCutterDiameter)
                 h2 = segment.Length;
             else
-                h2 = segment.Length + CutterDiameter / 2;
+                h2 = segment.Length + (CutterDiameter / 2) + PostEndDistance;
 
             var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, h2);
 

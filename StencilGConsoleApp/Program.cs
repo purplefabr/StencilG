@@ -16,7 +16,8 @@ namespace StencilGConsoleApp
             using(FileStream fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite))
             using(StreamWriter sw = new StreamWriter(fs)){
                 Cutter cutter = new Cutter(sw);
-                cutter.PreStartDistance = 0.2;
+                //cutter.PreStartDistance = 0.2;
+                cutter.PostEndDistance = 0.2;
                 List<LineSegment> segments = new List<LineSegment>();
                 segments.AddRange(new Square(new Point(0.5, 0.5), 1, 0).Segments);
                 segments.AddRange(new Square(new Point(2.5, 0.5), 1, 0).Segments);
