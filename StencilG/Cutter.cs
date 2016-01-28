@@ -16,8 +16,9 @@ namespace StencilG
         private string commentColumn;                   // Position of all gcode comments, make this larger than longest gcode length
         private double xScratchOrigin;                  // Position of scratch area 0,y (delta printers have machine origin in the middle so set to negative value)
         private double yScratchOrigin;                  // Position of scratch area x,0 (delta printers have machine origin in the middle so set to negative value)       
-        private double cutterX, cutterY;                // XY position of the cutting point
-        private double toolX, toolY;                    // XY position of the tool centre
+        private Point cutterPoint;                      // XY position of the cutting point
+        private Point toolPoint;                        // XY position of the tool centre
+        private bool homed;                             // Indicates that cutter has been homed
 
         public double CutterDiameter { get; set; }      // Blade body diameter in mm
         public double CutterAngle { get; set; }         // Blade cutting angle in degrees
@@ -27,6 +28,21 @@ namespace StencilG
         public double CutSpeed { get; set; }            // Speed (mm/min) to do cuts at
         public double ToolZSpeed { get; set; }          // Speed (mm/min) to plunge and retract tool at
         public bool EnableGCodeComments { get; set; }   // Output comments to gcode file
+        private double preStartDistance;
+        public double PreStartDistance                  // Offsets cutter by this distance before a cut to make corners sharper
+        {
+            get
+            {
+                return preStartDistance;
+            }
+            set
+            {
+                if (value > (CutterDiameter / 2))
+                    throw new CutterException("Could not set PreStartDistance; distance larger than CutterDiameter/2");
+                else
+                    preStartDistance = value;
+            }
+        }
 
         public Cutter(StreamWriter streamWriter)
         {
@@ -37,10 +53,10 @@ namespace StencilG
             this.commentColumn = "40";
             this.xScratchOrigin = -30;
             this.yScratchOrigin = -30;
-            this.cutterX = double.NaN;
-            this.cutterY = double.NaN;
-            this.toolX = double.NaN;
-            this.toolY = double.NaN;
+            this.cutterPoint = new Point(double.NaN, double.NaN);
+            this.toolPoint = new Point(double.NaN, double.NaN);
+            this.preStartDistance = 0;
+            this.homed = false;
 
             CutterDiameter = 0.9;
             CutterAngle = 45;
@@ -50,13 +66,14 @@ namespace StencilG
             CutSpeed = 60;
             ToolZSpeed = 50;
             EnableGCodeComments = true;
-
-            Home();
-            Start();
         }
 
         public void Render(LineSegment segment)
         {
+            if (!homed) {
+                Home();
+                Start();
+            }
             if (!this.headingKnown || (this.heading != segment.Heading))
             {
                 OrientCutter(segment);
@@ -70,34 +87,31 @@ namespace StencilG
 
         #region GCode Helpers
 
-        private void Home()
+        public void Home()
         {
             Write("G28", "Home printer");
             this.zHeight = double.PositiveInfinity;  //At max Z due to G28 home
-            this.toolX = 0;
-            this.toolY = 0;
+            this.toolPoint.X = 0;
+            this.toolPoint.Y = 0;
             if (!headingKnown)
             {
-                this.cutterX = double.NaN;
-                this.cutterY = double.NaN;
+                this.cutterPoint.Update(double.NaN, double.NaN);
             }
             else
             {
                 throw new NotImplementedException();
             }
-
+            homed = true;
         }
 
         private void Start()
         {
             Write("G1 X" + GCodeDouble(0) + " Y" + GCodeDouble(0) + " Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(MoveSpeed * 2), "Move to start position");
             this.zHeight = MoveHeight;
-            this.toolX = 0;
-            this.toolY = 0;
+            this.toolPoint.Update(0, 0);
             if (!headingKnown)
             {
-                this.cutterX = double.NaN;
-                this.cutterY = double.NaN;
+                this.cutterPoint.Update(double.NaN, double.NaN);
             }
             else
             {
@@ -114,21 +128,18 @@ namespace StencilG
             if (ignoreCutterDiameter)
                 distance = 0;
             else
-                distance = CutterDiameter / 2;
+                distance = (CutterDiameter / 2) - preStartDistance;
 
             var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, distance);
 
             Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(MoveSpeed), comment);
-            this.toolX = toolEndPoint.X;
-            this.toolY = toolEndPoint.Y;
-            this.cutterX = segment.Start.X;
-            this.cutterY = segment.Start.Y;
-
+            this.toolPoint.Update(toolEndPoint);
+            this.cutterPoint.Update(segment.Start);
         }
 
         private void Cut(LineSegment segment, string comment, bool ignoreCutterDiameter = false)
         {
-            if ((segment.Start.X != this.cutterX) || (segment.Start.Y != this.cutterY))
+            if ((segment.Start.X != this.cutterPoint.X) || (segment.Start.Y != this.cutterPoint.Y))
                 throw new CutterException("Lockout on Cut due to incorrect cutter position");
             if (this.zHeight != CutHeight)
                 throw new CutterException("Lockout on Cut due to incorrect Z Height");
@@ -142,10 +153,8 @@ namespace StencilG
             var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, h2);
 
             Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(CutSpeed), comment);
-            this.toolX = toolEndPoint.X;
-            this.toolY = toolEndPoint.Y;
-            this.cutterX = segment.End.X;
-            this.cutterY = segment.End.Y;
+            this.toolPoint.Update(toolEndPoint);
+            this.cutterPoint.Update(segment.End);
         }
 
         private void Plunge()
@@ -182,7 +191,7 @@ namespace StencilG
 
         private string GCodeDouble(double value)
         {
-            return string.Format("{0:N2}", value);
+            return string.Format("{0:F2}", value);
         }
 
         private void Write(string command, string comment)
