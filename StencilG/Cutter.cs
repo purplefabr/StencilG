@@ -81,6 +81,11 @@ namespace StencilG
                 this.cutterX = double.NaN;
                 this.cutterY = double.NaN;
             }
+            else
+            {
+                throw new NotImplementedException();
+            }
+
         }
 
         private void Start()
@@ -93,6 +98,10 @@ namespace StencilG
             {
                 this.cutterX = double.NaN;
                 this.cutterY = double.NaN;
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -141,13 +150,19 @@ namespace StencilG
 
         private void Plunge()
         {
-            Write("G1 Z" + GCodeDouble(CutHeight) + " F" + GCodeDouble(ToolZSpeed), "Plunge blade");
+            if (this.zHeight != CutHeight)
+                Write("G1 Z" + GCodeDouble(CutHeight) + " F" + GCodeDouble(ToolZSpeed), "Plunge blade");
+            else
+                throw new CutterException("Lockout on Plunge due to already being at CutHeight");
             this.zHeight = CutHeight;
         }
 
         private void Retract()
         {
-            Write("G1 Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(ToolZSpeed), "Retract blade");
+            if(this.zHeight != MoveHeight)
+                Write("G1 Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(ToolZSpeed), "Retract blade");
+            else
+                throw new CutterException("Lockout on Retract due to already being at MoveHeight");
             this.zHeight = MoveHeight;
         }
 
