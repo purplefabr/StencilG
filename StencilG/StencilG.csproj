@@ -43,10 +43,15 @@
   <ItemGroup>
     <Compile Include="Cutter.cs" />
     <Compile Include="CutterException.cs" />
-    <Compile Include="LineSegment.cs" />
+    <Compile Include="GCodeFile.cs" />
+    <Compile Include="Segments\ArcSegment.cs" />
+    <Compile Include="Segments\ISegment.cs" />
+    <Compile Include="Segments\LineSegment.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shapes\IShape.cs" />
+    <Compile Include="Shapes\Rectangle.cs" />
     <Compile Include="Shapes\Square.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -24,12 +24,12 @@ namespace StencilG
         public double CutterAngle { get; set; }         // Blade cutting angle in degrees
         public double MoveHeight { get; set; }          // Z height to do moves at (where tool is clear of work area)
         public double CutHeight { get; set; }           // Z height to cut at (where tool is engaged with material)
-        public double MoveSpeed { get; set; }           // Speed (mm/min) to do moves at
-        public double CutSpeed { get; set; }            // Speed (mm/min) to do cuts at
-        public double ToolZSpeed { get; set; }          // Speed (mm/min) to plunge and retract tool at
+        public int MoveSpeed { get; set; }           // Speed (mm/min) to do moves at
+        public int CutSpeed { get; set; }            // Speed (mm/min) to do cuts at
+        public int ToolZSpeed { get; set; }          // Speed (mm/min) to plunge and retract tool at
         public bool EnableGCodeComments { get; set; }   // Output comments to gcode file
         private double preStartDistance;
-        public double PreStartDistance                  // Offsets cutter by this distance before a cut to make corners sharper
+        public double PreStartDistance                  
         {
             get
             {
@@ -43,7 +43,9 @@ namespace StencilG
                     preStartDistance = value;
             }
         }
-        public double PostEndDistance { get; set; }
+        public double PostEndDistance { get; set; }     // Offsets cutter by this distance before a cut to make corners sharper
+        public double PreMoveDistance { get; set; }
+        public int Acceleration { get; set; }
 
         public Cutter(StreamWriter streamWriter)
         {
@@ -52,8 +54,8 @@ namespace StencilG
             this.heading = 0;
             this.zHeight = double.PositiveInfinity;
             this.commentColumn = "40";
-            this.xScratchOrigin = -30;
-            this.yScratchOrigin = -30;
+            this.xScratchOrigin = -50;
+            this.yScratchOrigin = -50;
             this.cutterPoint = new Point(double.NaN, double.NaN);
             this.toolPoint = new Point(double.NaN, double.NaN);
             this.preStartDistance = 0;
@@ -63,10 +65,13 @@ namespace StencilG
             CutterAngle = 45;
             MoveHeight = 5;
             CutHeight = 0;
-            MoveSpeed = 600;
+            MoveSpeed = 1200;
             CutSpeed = 60;
-            ToolZSpeed = 50;
+            ToolZSpeed = 120;
             EnableGCodeComments = true;
+            PostEndDistance = 0.2;
+            PreMoveDistance = 5;
+            Acceleration = 100;
         }
 
         public void Render(LineSegment segment)
@@ -107,7 +112,8 @@ namespace StencilG
 
         private void Start()
         {
-            Write("G1 X" + GCodeDouble(0) + " Y" + GCodeDouble(0) + " Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(MoveSpeed * 2), "Move to start position");
+            Write("G1 X" + GCodeDouble(0) + " Y" + GCodeDouble(0) + " Z" + GCodeDouble(MoveHeight) + " F" + GCodeInt(MoveSpeed), "Move to start position");
+            Write("M204 S" + GCodeInt(Acceleration), "Setting Acceleration to " + GCodeInt(Acceleration).ToString());
             this.zHeight = MoveHeight;
             this.toolPoint.Update(0, 0);
             if (!headingKnown)
@@ -125,8 +131,11 @@ namespace StencilG
             if (this.zHeight != MoveHeight)
                 throw new CutterException("Lockout on Move due to incorrect Z Height");
 
-            var preMovePoint = MathHelper.CalcEndPoint(segment.Start, (segment.Heading + 180) % 360, 10);
-            Write("G1 X" + GCodeDouble(preMovePoint.X) + " Y" + GCodeDouble(preMovePoint.Y) + " F" + GCodeDouble(MoveSpeed), "PreMove point");
+            if (PreMoveDistance > 0)
+            {
+                var preMovePoint = MathHelper.CalcEndPoint(segment.Start, (segment.Heading + 180) % 360, PreMoveDistance);
+                Write("G1 X" + GCodeDouble(preMovePoint.X) + " Y" + GCodeDouble(preMovePoint.Y) + " F" + GCodeInt(MoveSpeed), "PreMove point");
+            }
 
             double distance;
             if (ignoreCutterDiameter)
@@ -137,7 +146,7 @@ namespace StencilG
             var toolPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, distance);
             
 
-            Write("G1 X" + GCodeDouble(toolPoint.X) + " Y" + GCodeDouble(toolPoint.Y) + " F" + GCodeDouble(MoveSpeed), comment);
+            Write("G1 X" + GCodeDouble(toolPoint.X) + " Y" + GCodeDouble(toolPoint.Y) + " F" + GCodeInt(MoveSpeed), comment);
             this.toolPoint.Update(toolPoint);
             this.cutterPoint.Update(segment.Start);
         }
@@ -157,7 +166,7 @@ namespace StencilG
 
             var toolEndPoint = MathHelper.CalcEndPoint(segment.Start, segment.Heading, h2);
 
-            Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeDouble(CutSpeed), comment);
+            Write("G1 X" + GCodeDouble(toolEndPoint.X) + " Y" + GCodeDouble(toolEndPoint.Y) + " F" + GCodeInt(CutSpeed), comment);
             this.toolPoint.Update(toolEndPoint);
             this.cutterPoint.Update(segment.End);
         }
@@ -165,7 +174,7 @@ namespace StencilG
         private void Plunge()
         {
             if (this.zHeight != CutHeight)
-                Write("G1 Z" + GCodeDouble(CutHeight) + " F" + GCodeDouble(ToolZSpeed), "Plunge blade");
+                Write("G1 Z" + GCodeDouble(CutHeight) + " F" + GCodeInt(ToolZSpeed), "Plunge blade");
             else
                 throw new CutterException("Lockout on Plunge due to already being at CutHeight");
             this.zHeight = CutHeight;
@@ -174,7 +183,7 @@ namespace StencilG
         private void Retract()
         {
             if(this.zHeight != MoveHeight)
-                Write("G1 Z" + GCodeDouble(MoveHeight) + " F" + GCodeDouble(ToolZSpeed), "Retract blade");
+                Write("G1 Z" + GCodeDouble(MoveHeight) + " F" + GCodeInt(ToolZSpeed), "Retract blade");
             else
                 throw new CutterException("Lockout on Retract due to already being at MoveHeight");
             this.zHeight = MoveHeight;
@@ -196,8 +205,14 @@ namespace StencilG
 
         private string GCodeDouble(double value)
         {
-            return string.Format("{0:F2}", value);
+            return string.Format("{0:F3}", value);
         }
+
+        private string GCodeInt(int value)
+        {
+            return value.ToString();
+        }
+
 
         private void Write(string command, string comment)
         {

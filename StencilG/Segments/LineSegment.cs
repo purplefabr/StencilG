@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace StencilG
 {
-    public class LineSegment
+    public class LineSegment : ISegment
     {
         public Point Start { get; internal set; }
         public Point End { get; internal set; }

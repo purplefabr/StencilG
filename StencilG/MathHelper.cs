@@ -64,5 +64,10 @@ namespace StencilG
             point.Y = start.Y + (correctedY * ySign);
             return point;
         }
+
+        public static double ToMillimeter(double inch)
+        {
+            return inch / 0.0393700787402;
+        }
     }
 }
