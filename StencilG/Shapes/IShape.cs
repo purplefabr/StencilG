@@ -9,7 +9,7 @@ namespace StencilG
     public interface IShape
     {
         List<ISegment> Segments { get; }
-        Point Origin { get; }
+        Point Centre { get; }
         double Rotation { get; }
         double Shrink { get; }
 

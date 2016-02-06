@@ -9,18 +9,18 @@ namespace StencilG
     public class Rectangle : IShape
     {
         public List<ISegment> Segments { get; internal set; }
-        public Point Origin { get; internal set; }
+        public Point Centre { get; internal set; }
         public double Rotation { get; internal set; }
         public double Shrink { get; internal set; }
 
         public double Width { get; internal set; }
         public double Height { get; internal set; }
 
-        public Rectangle(Point origin, double width, double height, double rotation, double shrink = 0)
+        public Rectangle(Point centre, double width, double height, double rotation, double shrink = 0)
         {
             if (rotation != 0)
                 throw new NotImplementedException();
-            Origin = origin;
+            Centre = centre;
             Rotation = rotation;
             Shrink = shrink;
             Width = width;
@@ -42,14 +42,22 @@ namespace StencilG
             //       2
             //   x-------x
             //   |       |
-            // 3 |       | 4
+            // 3 |   o   | 4
             //   |       |
             //   x-------x
             //       1
-            Segments.Add(new LineSegment(new Point(Origin.X + Shrink / 2, Origin.Y + Shrink / 2), new Point(Origin.X + Width - Shrink / 2, Origin.Y + Shrink / 2)));
-            Segments.Add(new LineSegment(new Point(Origin.X + Shrink / 2, Origin.Y + Height - Shrink / 2), new Point(Origin.X + Width - Shrink / 2, Origin.Y + Height - Shrink / 2)));
-            Segments.Add(new LineSegment(new Point(Origin.X + Shrink / 2, Origin.Y + Shrink / 2), new Point(Origin.X + Shrink / 2, Origin.Y + Height - Shrink / 2)));
-            Segments.Add(new LineSegment(new Point(Origin.X + Width - Shrink / 2, Origin.Y + Shrink / 2), new Point(Origin.X + Width - Shrink / 2, Origin.Y + Height - Shrink / 2)));
+            Segments.Add(new LineSegment(
+                new Point(Centre.X - (Width / 2) + (Shrink / 2),    Centre.Y - (Height / 2) + (Shrink / 2)), 
+                new Point(Centre.X + (Width / 2) - (Shrink / 2),    Centre.Y - (Height / 2) + (Shrink / 2))));
+            Segments.Add(new LineSegment(
+                new Point(Centre.X - (Width / 2) + (Shrink / 2),    Centre.Y + (Height / 2) - (Shrink / 2)), 
+                new Point(Centre.X + (Width / 2) - (Shrink / 2),    Centre.Y + (Height / 2) - (Shrink / 2))));
+            Segments.Add(new LineSegment(
+                new Point(Centre.X - (Width / 2) + (Shrink / 2),    Centre.Y - (Height / 2) + (Shrink / 2)), 
+                new Point(Centre.X - (Width / 2) + (Shrink / 2),    Centre.Y + (Height / 2) - (Shrink / 2))));
+            Segments.Add(new LineSegment(
+                new Point(Centre.X + (Width / 2) - (Shrink / 2), Centre.Y - (Height / 2) + (Shrink / 2)), 
+                new Point(Centre.X + (Width / 2) - (Shrink / 2), Centre.Y + (Height / 2) - (Shrink / 2))));
         }
     }
 }
