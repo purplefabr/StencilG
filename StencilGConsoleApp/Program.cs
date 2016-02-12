@@ -13,7 +13,7 @@ namespace StencilGConsoleApp
         static void Main(string[] args)
         {
             string path = Path.Combine(Path.GetDirectoryName(new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), "test.gcode");
-            GCodeFile input = new GCodeFile("C:\\Users\\Master\\Documents\\TestSMT.ger");
+            GerberFile input = new GerberFile("C:\\Users\\Master\\Documents\\TestSMT.ger");
             using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite))
             using(StreamWriter sw = new StreamWriter(fs)){
                 Cutter cutter = new Cutter(sw);

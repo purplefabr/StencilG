@@ -43,7 +43,7 @@
   <ItemGroup>
     <Compile Include="Cutter.cs" />
     <Compile Include="CutterException.cs" />
-    <Compile Include="GCodeFile.cs" />
+    <Compile Include="GerberFile.cs" />
     <Compile Include="Segments\ArcSegment.cs" />
     <Compile Include="Segments\ISegment.cs" />
     <Compile Include="Segments\LineSegment.cs" />

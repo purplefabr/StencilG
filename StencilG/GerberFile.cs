@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace StencilG
 {
-    public class GCodeFile
+    public class GerberFile
     {
         private string filePath;
         private List<string> fileLines;                                         // Storing whole file in memory may not make sense later but it'll do for now
@@ -21,7 +21,7 @@ namespace StencilG
         private int selectedShape;
 
 
-        public GCodeFile(string filePath)
+        public GerberFile(string filePath)
         {
             this.filePath = filePath;
             this.fileLines = File.ReadAllLines(this.filePath).ToList();

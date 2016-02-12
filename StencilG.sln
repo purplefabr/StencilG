@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StencilG", "StencilG\Stenci
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StencilGConsoleApp", "StencilGConsoleApp\StencilGConsoleApp.csproj", "{4E4AA01C-061E-479B-8D41-F010A6B895D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StencilGApp", "StencilGApp\StencilGApp.csproj", "{EA2C0F1D-2CBE-4346-AD39-F0EA0FEEB32F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{4E4AA01C-061E-479B-8D41-F010A6B895D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E4AA01C-061E-479B-8D41-F010A6B895D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E4AA01C-061E-479B-8D41-F010A6B895D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA2C0F1D-2CBE-4346-AD39-F0EA0FEEB32F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA2C0F1D-2CBE-4346-AD39-F0EA0FEEB32F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA2C0F1D-2CBE-4346-AD39-F0EA0FEEB32F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA2C0F1D-2CBE-4346-AD39-F0EA0FEEB32F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
