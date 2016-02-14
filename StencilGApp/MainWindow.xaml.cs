@@ -1,18 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.IO.Ports;
 
 namespace StencilGApp
 {
@@ -22,6 +10,7 @@ namespace StencilGApp
     public partial class MainWindow : Window
     {
         Controller controller = new Controller();
+        ControlWindow controlWindow = new ControlWindow();
 
         public MainWindow()
         {
@@ -54,7 +43,7 @@ namespace StencilGApp
         {
             // Create OpenFileDialog
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
-            
+
             // Set filter for file extension and default file extension
             dlg.DefaultExt = ".gcode";
             dlg.Filter = "GCode|*.gcode";
@@ -68,7 +57,18 @@ namespace StencilGApp
                 controller.Convert();
             }
 
-            
+
+        }
+
+        private void btnControl_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Window n in Application.Current.Windows)
+                if (n.Name == "controlWindow")
+                { }
+                else
+                { controlWindow.Show(); }
+
+            controlWindow.Activate();
         }
     }
 }

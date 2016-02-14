@@ -1,4 +1,4 @@
-﻿<Window x:Class="StencilGApp.MainWindow"
+﻿<Window x:Name="mainWindow" x:Class="StencilGApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Height="350" Width="525" WindowStartupLocation="CenterScreen" MinHeight="150" MinWidth="300">
@@ -19,8 +19,10 @@
         </Border>
 
         <StackPanel Grid.Column="1">
-            <Button x:Name="btnLoadGerber" Content="Load Gerber" Grid.Column="1" Margin="5" Height="25" Click="btnLoadGerber_Click"/>
-            <Button x:Name="btnConvert" Content="Convert" Grid.Column="1" Margin="5" Height="25" Click="btnConvert_Click"/>
+            <Button x:Name="btnLoadGerber" Content="Load Gerber" Margin="5" Click="btnLoadGerber_Click"/>
+            <Button x:Name="btnConvert" Content="Convert" Margin="5" Click="btnConvert_Click"/>
+            <Button x:Name="btnControl" Content="Control" Margin="5" Click="btnControl_Click"/>
+
         </StackPanel>
     </Grid>
 </Window>
