@@ -59,6 +59,8 @@
     <Compile Include="ControlWindow.xaml.cs">
       <DependentUpon>ControlWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="GCode.cs" />
+    <Compile Include="GridGenerator.cs" />
     <Compile Include="Serial.cs" />
     <Page Include="ControlWindow.xaml">
       <SubType>Designer</SubType>

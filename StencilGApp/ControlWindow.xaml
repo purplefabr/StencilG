@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StencilGApp"
         mc:Ignorable="d"
-        Title="Control" Height="600" Width="700" Loaded="controlWindow_Loaded" WindowStartupLocation="CenterScreen">
+        Title="Control" Height="600" Width="700" Loaded="controlWindow_Loaded" WindowStartupLocation="CenterScreen" KeyUp="controlWindow_KeyUp">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -14,7 +14,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Border x:Name="border" Grid.Column="0" Margin="5" ClipToBounds="true" MouseDown="Border_MouseDown" MouseUp="Border_MouseUp" MouseMove="Border_MouseMove" Background="#55000000" MaxHeight="1000" MaxWidth="1000" MouseWheel="border_MouseWheel">
+        <Border x:Name="border" Grid.Column="0" Margin="5" ClipToBounds="true" MouseDown="Border_MouseDown" MouseUp="Border_MouseUp" MouseMove="Border_MouseMove" Background="#55000000" MaxHeight="1000" MaxWidth="1000" MouseWheel="border_MouseWheel" DragLeave="border_DragLeave">
             <Canvas x:Name="canvasWorkArea"  HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Canvas.LayoutTransform>
                     <ScaleTransform ScaleX="1" ScaleY="-1" CenterX=".5" CenterY=".5" />
@@ -28,7 +28,12 @@
             <Button x:Name="btnConnect" Content="Connect" Margin="5" Click="btnConnect_Click"/>
             <Label x:Name="label1" Content="Label"/>
             <Label x:Name="label2" Content="Label"/>
-
+            <Label x:Name="label3" Content="X offset"/>
+            <Slider x:Name="sldXOffset" Minimum="-50" Maximum="50"/>
+            <Label x:Name="label4" Content="Y offset"/>
+            <Slider x:Name="sldYOffset" Minimum="-50" Maximum="50"/>
+            <Button Content="Draw Grid" Click="Button_Click"/>
+            <Button Content="Repeat" Click="Button_Click_1"/>
 
         </StackPanel>
     </Grid>
